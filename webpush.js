@@ -110,7 +110,7 @@
                                sub.receiverKey,
                                P256DH,
                                true,
-                               ['deriveBits'])
+                               [])
       .then(receiverKey => {
           // Ok, we've got a representation of the remote key.
           // Now, derive a shared key from our temporary local key

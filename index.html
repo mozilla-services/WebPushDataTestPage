@@ -818,7 +818,7 @@ function preflight(){
                         key,
                         {name:"ECDH", namedCurve:"P-256"},
                         true,
-                        ['deriveBits'])
+                        [])
                         .then( key => {
                             /* And finally, can we derive bits from the
                              * imported key and the private key? This is

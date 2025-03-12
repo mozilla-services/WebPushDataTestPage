@@ -427,17 +427,12 @@ function subscribe(appServerKey) {
                             output('salt',
                                 base64url.encode(crypto.getRandomValues(
                                                         new Uint8Array(16))));
-                            try {
-                                // Auth key allows for improved Crypto-Key support.
-                                // However, it's being slowly rolled out.
-                                let authKey = subscription_info.getKey('auth');
-                                output('authKey', base64url.encode(authKey));
-                                if (! authKey) {
-                                    console.warn ("This browser doesn't support auth key. Please update.");
-                                }
-                            } catch (e) {
-                                //throw err;
-                                console.warn("Crypto-Key support unavailable.");
+                            // Auth key allows for improved Crypto-Key support.
+                            // However, it's being slowly rolled out.
+                            let authKey = subscription_info.getKey('auth');
+                            output('authKey', base64url.encode(authKey));
+                            if (! authKey) {
+                                console.warn ("This browser doesn't support auth key. Please update.");
                             }
                             document.getElementById("encrypt").disabled = false;
 

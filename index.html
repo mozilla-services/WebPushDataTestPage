@@ -194,12 +194,8 @@
     </div>
     <div class="ctrl">Optionally <button id="addVapid">Add VAPID</button></div>
     <div id="vapidHeaders">
-        <div class="title">VAPID Headers</div>
-        <div class="description">Add these headers to your outbound request. The headers are "Authorization"
-            and "Crypto-Key". "Authorization" is a JWT containing the signed <code>claims</code>. "Crypto-Key"
-            contains a "p256ecdsa" element that specifies the "raw" public key used to verify the JWT signature.
-            Note that "Crypto-Key" may contain multiple elements separated by a comma. If you specify VAPID
-            headers, we'll append them to the Crypto-Key header.</div>
+        <div class="title">VAPID Header</div>
+        <div class="description">Add the <code>authorization</code> header to your outbound request. The header is a JWT containing the signed <code>claims</code> and the "raw" public key used to verify the JWT signature.</div>
         <div name="vapidHeaders" class="vapidHeader value"></div>
     </div>
     <div id="vapidPrivate">
@@ -211,8 +207,8 @@
    </div>
     <div id="vapidPublic">
         <div class="title">VAPID public key</div>
-        <div class="description">VAPID <b><i>always</i></b> uses its own set of keys. You sign with the private half
-            and include the public key with the <code>Crypto-Key</code> header. This key is in the "uncompressed" or
+        <div class="description">VAPID <b><i>always</i></b> uses its own set of keys. You sign with the private key
+            and include the public key with the <code>Authorization</code> header. This key is in the "uncompressed" or
             "raw" key point format.</div>
         <div name="vapidPublic" class="value"></div>
     <div id="pushDashboard">
@@ -690,7 +686,7 @@ function init_vapid(){
             vapid.export_public_raw(),
         ]).then(([vapidPrivate, vapidPublic, appServerKey]) => {
             output("vapidPrivate", vapidPrivate);
-            output("vapidPublic", vapidPublic);
+            output("vapidPublic", appServerKey);
             output("vapidPublicForDashboard", appServerKey);
             return mzcc.strToArray(mzcc.fromUrlBase64(appServerKey));
         });

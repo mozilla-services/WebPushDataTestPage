@@ -28,12 +28,10 @@
     encryption to your own App Server or library.</p>
     <h2>Pre-requisites</h2>
     <p>This page will presume you're familiar with using push notifications
-    and want to start using the experimental encrypted data payloads.
-    <i>NOTE:</i> This feature is currently <u>experimental</u>, there is
-    <u>very limited library support!</u></p>
+    and want to start using the encrypted data payloads.</p>
     <p>Before getting started, I strongly recommend you first consult:
     <a href="https://developer.mozilla.org/docs/Web/API/Push_API/Using_the_Push_API">Using
-    the Push API</a>on MDN (the Mozilla Developer Network). This will help
+    the Push API</a> on MDN (the Mozilla Developer Network). This will help
     explain how push basic notifications function without data payloads.</p>
     <h2>Getting Started</h2>
     <p>Emulating an App Server, this page allows you to do the following:
@@ -162,7 +160,7 @@
         <div id="gcmB">
             <div class="title">Encryption Key</div>
             <div class="description">HKDF generated bits derived from the shared key
-            material, which is a <acronym title='The string "Content-Encoding: aesgcm"'>
+            material, which is a <acronym title='The string "Content-Encoding: aes128gcm"'>
             static string</acronym> run through the KDF which has been seeded from the
             <span class="salt">salt</span> and the <span class="senderKey"> senderKey</span>.
             </div>
@@ -176,15 +174,6 @@
                <span class="salt">salt</span>
                 and the <span class="senderKey">senderKey</span>.</div>
             <div name="nonce" class="value nonce"></div>
-        </div>
-        <div id="iv">
-            <div class="title">Initialization Vector:</div>
-            <div class="description">The AES-GCM Initialization Vector.
-            This is a bit more complex, as it comprises a known chunk
-            created through the same KDF that created the <span class="nonce">
-            nonce</span>, as well the index number of the chunk of data
-            we're encoding.</div>
-            <div name="iv" class="value"></div>
         </div>
     </div>
 <div class="section">
@@ -274,17 +263,6 @@
             with the service worker handling the data.<br>
         Check the console and retry to see if it's still a problem.
         </div>
-    </div>
-    <div id="osalt">
-        <div class="title">Salt:</div>
-        <div class="description">The salt value sent in the "Encryption"
-        header.</div>
-        <div name="osalt" class="value salt wrap"></div></div>
-    <div id="odh">
-        <div class="title">dh:</div>
-        <div class="description">Diffie-Hellman key sent in the "Encryption-Key"
-        header.</div>
-        <div name="odh" class="value wrap senderKey"></div>
     </div>
     <div id="odata">
         <div class="title">data:</div>
@@ -575,8 +553,6 @@ function encrypt(receiverKey, vapid_headers) {
                     vapid_headers = JSON.parse(vapid_headers);
                 }
                 // Populate the extra fields
-                output('osalt', base64url.encode(options.salt));
-                output('odh', options.dh);
                 let rawStr = '';
                 let outStr = '';
                 // Construct the curl. Remember, this needs to
@@ -585,9 +561,9 @@ function encrypt(receiverKey, vapid_headers) {
                 let sbody = '';
                 let ebody = '';
                 let cbody = '';
-                for (let k in options.payload){
+                for (let k in options.payload.body){
                     let ik = parseInt(k);
-                    let ij = parseInt(options.payload[k]);
+                    let ij = parseInt(options.payload.body[k]);
                     let cj = ("00" + ij.toString(16)).slice(-2, 4);
                     sbody += `\\x${cj}`;
                     cbody += String.fromCodePoint(ij);
@@ -603,49 +579,34 @@ function encrypt(receiverKey, vapid_headers) {
                 // dump the raw curl to console.log. This is useful for
                 // folks doing device work.
                 rawStr = outStr;
-                rawStr += `curl -v -X ${options.method} ${options.endpoint} `;
-                let enc_content = 'keyid=p256dh;dh=' + options.dh;
-                if (options.encr_header == "crypto-key" && vapid_headers) {
+                rawStr += `curl -v -X POST ${endpoint} `;
+                if (vapid_headers) {
                     // add the vapid info
                     // Note: technically, these should be separated with a
                     // ",", however some Push Servers may reject "," as
                     // an invalid character. You can use ";" and create
                     // a single record.
-                    enc_content += ";" + vapid_headers["crypto-key"];
                     rawStr += ` -H "Authorization: ` +
                         `${vapid_headers.authorization}" `;
                 }
-                rawStr += ` -H "${options.encr_header}: ` + enc_content + '"';
-                rawStr += ' -H "encryption: keyid=p256dh;salt=' +
-                    base64url.encode(options.salt) + '"';
-                rawStr += ' -H "content-encoding: aesgcm"';
+                rawStr += ' -H "content-encoding: aes128gcm"';
                 rawStr += ' -H "TTL: 60"';
                 rawStr += ' --data-binary @encrypted.data';
                 console.log(rawStr);
 
                 // outStr is the styled version, which is easier for humans
-                enc_content = `keyid=p256dh;dh=<span class="senderKey" ` +
-                    `title="The public key we used to encrypt">` +
-                    options.dh + `</span>`
-                outStr += `\ncurl -v -X ${options.method} ` +
+                outStr += `\ncurl -v -X POST ` +
                     ` <span class="endpoint" ` +
                    `title="The subscription endpoint"` +
-                   `>${options.endpoint}</span> `;
-                if (options.encr_header == "crypto-key" && vapid_headers) {
+                   `>${endpoint}</span> `;
+                if (vapid_headers) {
                     // add the vapid info
-                    enc_content += `,<span class="vapidHeader" ` +
-                        `title="a VAPID header">` +
-                        vapid_headers["crypto-key"] + `</span>`;
                     outStr += ` -H "Authorization: <span class="vapidHeader"` +
                         ` title="a VAPID header">` +
                         `${vapid_headers.authorization}</span>"`;
                 }
 
-                outStr += ` -H "${options.encr_header}: ${enc_content}"`;
-                outStr += ` -H "encryption: keyid=p256dh;salt=<span ` +
-                    `class="salt" title="The salt value we used to `+
-                    `encrypt">${base64url.encode(options.salt)}</span>"`;
-                outStr += ` -H "content-encoding: ${options.content_type}"`;
+                outStr += ` -H "content-encoding: aes128gcm"`;
                 outStr += ' -H "TTL: 60"';
                 outStr += ' --data-binary @encrypted.data';
                 output('curl', outStr);
@@ -654,13 +615,13 @@ function encrypt(receiverKey, vapid_headers) {
                 //    {type: 'application/octet-binary'});
                 if (vapid_headers) {
                     Object.keys(vapid_headers).forEach(name => {
-                        if (options.headers.has(name)) {
+                        if (options.payload.headers.has(name)) {
                             var combo = [];
-                            combo.push(options.headers.get(name));
+                            combo.push(options.payload.headers.get(name));
                             combo.push(vapid_headers[name]);
-                            options.headers.set(name, combo.join(","));
+                            options.payload.headers.set(name, combo.join(","));
                         } else {
-                            options.headers.set(name, vapid_headers[name]);
+                            options.payload.headers.set(name, vapid_headers[name]);
                         }
                     });
                 }

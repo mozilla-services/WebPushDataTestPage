@@ -173,20 +173,14 @@ class VapidToken {
             .then(signature => {
                 let sig = this.mzcc.toUrlBase64(
                     this.mzcc.arrayToStr(signature));
-                /* The headers consist of the constructed JWT as the
-                 * "authorization" and the raw Public key as the p256ecdsa
-                 * element of "Crypto-Key"
-                 * Note that Crypto-Key can contain many elements, separated by
-                 * a "," You may need to append this value to an existing
-                 * "Crypto-Key" header value.
-                 *
+                /* The authorization header consist of the constructed JWT as the
+                 * and the raw Public key
                  *
                  */
                 return this.export_public_raw()
                     .then( pubKey => {
                         return {
-                            authorization: "Bearer " + content + "." + sig,
-                            "crypto-key": "p256ecdsa=" + pubKey,
+                            authorization: `vapid t=${content}.${sig},k=${pubKey}`,
                             publicKey: pubKey,
                         }
                     })

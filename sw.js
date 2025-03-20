@@ -4,6 +4,13 @@
  */
 'use strict';
 
+function showBgNotification(body) {
+    registration.showNotification("From Background", {
+        body: body,
+        icon: "icon.png",
+    });
+}
+
 self.addEventListener('push', function(event)  {
     /* Push events arrive when a push message is received.
        They should include a .data component that is the decrypted
@@ -36,6 +43,7 @@ self.addEventListener('push', function(event)  {
                  client.postMessage({'type':'content','content':content});
              });
              if (sent == false) {
+                 showBgNotification(content);
                  throw new Error("No valid client to send to.");
              }
            })
